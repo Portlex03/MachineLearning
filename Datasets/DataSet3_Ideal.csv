@@ -1,4 +1,4 @@
-Year,Type_1,Type_3,Distance,Engine_capacity_cm3,Transmission,Price(euro)
+Year,Type_Hatchback,Type_Sedan,Distance,Engine_capacity_cm3,Transmission,Price(euro)
 0.6875,0.0,1.0,0.4431818181818182,0.5329949238578681,1.0,7750
 0.78125,0.0,0.0,0.3068181818181818,0.3807106598984772,0.0,8550
 0.28125,0.0,1.0,2.2727272727272728e-06,0.3299492385786802,0.0,2200
