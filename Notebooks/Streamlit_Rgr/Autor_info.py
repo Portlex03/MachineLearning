@@ -10,7 +10,7 @@
 
 import streamlit as stm 
   
-stm.set_page_config(page_title = "DevelopInfo") 
+stm.set_page_config(page_title = "Autor Info") 
 stm.title("Информация об авторе")
 stm.markdown('''
   ### Имя: Портнягин Алексей
