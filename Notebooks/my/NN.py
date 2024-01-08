@@ -60,7 +60,7 @@ class Func(Enum):
     tanh    = (lambda x: np.nan_to_num((np.exp(2 * x) - 1) / (np.exp(2 * x) + 1)),
                lambda x: np.nan_to_num(4 * np.exp(2 * x) / (np.exp(2 * x) + 1)**2))
     
-    mse     = (lambda y_true, y_pred: (y_true - y_pred)**2,
+    mse     = (lambda y_true, y_pred: np.sum((y_true - y_pred)**2) / y_true.shape[0],
                lambda y_true, y_pred: 2 * (y_true - y_pred))
 
 mul = np.dot
@@ -130,52 +130,48 @@ class Layer(Node):
     def nref(self, obj): self._nref = obj
 	
 class NeuralNetwork:
-	def __init__(self, layers: list[Layer], lossFunc: Func) -> None:
-		# двусвязный список s1 <--> s2 <--> s3 <--> s4
-		self.layers = DoubleLinkedList().insert(layers)
-		# функция потерь и её производная
-		self.lossFunc, self.lossFuncDer = lossFunc.value
+    def __init__(self, layers: list[Layer], lossFunc: Func) -> None:
+        # двусвязный список s1 <--> s2 <--> s3 <--> s4
+        self.layers = DoubleLinkedList().insert(layers)
+        # функция потерь и её производная
+        self.lossFunc, self.lossFuncDer = lossFunc.value
 
-	def fit(self, X: np.ndarray, Y: np.ndarray, n_epohs: int = 400, eps: float = 0.0001):
-		self.answer = np.zeros((X.shape[0],))
-		for _ in range(n_epohs):
-			last_answer = np.zeros((X.shape[0],))
-			for i in range(X.shape[0]):
-				x = X[i].reshape(1, X[i].shape[0])
-			
-				# прямое распространение
-				layer = self.layers.head
-				vector = x
-				while layer != None:
-					vector = layer.transform(vector)
-					layer = layer.nref
-				
-				#градиент ошибки
-				dE_dH = self.lossFuncDer(Y[i], vector)
-				
-				# обратное распространение
-				layer = self.layers.tail
-				while layer.pref != None:
-					layer.backprop(dE_dH)
-					layer = layer.pref
-				last_answer[i] = vector
-			
-			# точка остановки градиентного спуска
-			if (np.fabs(self.answer - last_answer) < eps).all():
-				break
-			self.answer = last_answer
-		return self
+    def fit(self, X: np.ndarray, Y: np.ndarray, n_epohs: int = 400, eps: float = 0.0001):
+        self.answer = np.zeros((X.shape[0],))
+        for _ in range(n_epohs):
+            last_answer = []
+            for i in range(X.shape[0]):
+                # прямое распространение
+                layer = self.layers.head
+                vector = X[i].reshape(1, X[i].shape[0])
+                while layer != None:
+                    vector = layer.transform(vector)
+                    layer = layer.nref
+
+                #градиент ошибки
+                dE_dH = self.lossFuncDer(Y[i], vector)
+
+                # обратное распространение
+                layer = self.layers.tail
+                while layer.pref != None:
+                    layer.backprop(dE_dH)
+                    layer = layer.pref
+                    last_answer.append(vector)
+
+            # точка остановки градиентного спуска
+            if (np.fabs(self.answer - np.array(last_answer)) < eps).all():
+                break   
+            self.answer = last_answer
+        return self
 	
-	def predict(self, X: np.ndarray):
-		answer = np.empty((0,self.layers.tail.n_neurons))
-		for i in range(X.shape[0]):
-			x = X[i].reshape(1, X[i].shape[0])
-			
-			# прямое распространение
-			layer = self.layers.head
-			vector = x
-			while layer != None:
-				vector = layer.transform(vector)
-				layer = layer.nref
-			answer = np.vstack((answer,vector))
-		return answer
+    def predict(self, X: np.ndarray):
+        answer = np.empty((0,self.layers.tail.n_neurons))
+        for i in range(X.shape[0]):
+            # прямое распространение
+            layer = self.layers.head
+            vector = X[i].reshape(1, X[i].shape[0])
+            while layer != None:
+                vector = layer.transform(vector)
+                layer = layer.nref
+                answer = np.vstack((answer,vector))
+        return answer
